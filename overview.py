@@ -9,10 +9,10 @@ from common import clock, draw_str
 
 import re, datetime, urllib2, twitter
 
-api = twitter.Api(consumer_key='hZHPVKiNOi5JdDRBB1zFpQ',
-            consumer_secret='w6QcWKCLxVMf8cYlvoDy11D7eGcsiHP2cRIj94atg', access_token_key='67128905-QJuHCtpKCuqaqXoPGet2mxtkfBw8floZpgkMQNwbc',
-            access_token_secret='O0I1ZuIpn8APGfQGZOoY7puvZVdbJcBVmFIr3LXx0')
-user = "@MyOuterWorld"
+api = twitter.Api(consumer_key='',
+            consumer_secret='', access_token_key='',
+            access_token_secret='')
+user = ""
 
 def detect(img, cascade, old_rects=None):
     rects = cascade.detectMultiScale(img, scaleFactor=1.3, minNeighbors=4, minSize=(30, 30), flags = cv2.CASCADE_SCALE_IMAGE)
@@ -60,14 +60,20 @@ def face_mask(image, mask, shape):
 def display_fps(image, this_time):
     """"""
     frame_time = 1/(clock() - this_time)
-    draw_str(image, (20, 20), 'FPS: %.2f' % (frame_time))
+    draw_back_str(image, (20, 20), 'FPS: %.2f' % (frame_time))
 
     return clock()
 
 def text_hover(image, face, text_data):
     for x1, y1, x2, y2 in face:
+        x_center = x1+x2/2
+        width = image.shape[1]
+        if width/2 < x_center:
+            x_axis = 20
+        else:
+            x_axis = x2
         for position, words in enumerate(text_data):
-            draw_str(image, (x2+0, (y1-20+(20*position))), text_data[position - 1])
+            draw_back_str(image, (x_axis, (y1-20+(20*position))), text_data[position - 1])
 
 def draw_eyes(image, gray, rects, nested, old_rects):
     for x1, y1, x2, y2 in rects:
@@ -141,13 +147,13 @@ def generate_data(data_list):
     else:
         data_list.append("Should be working")
 
-    if cv2.waitKey(5) == ord('w'):
+    if cv2.waitKey(1) == ord('w'):
         data_list.append("w pressed")
-    elif cv2.waitKey(5) == ord('a'):
+    elif cv2.waitKey(1) == ord('a'):
         data_list.append("a pressed")
-    elif cv2.waitKey(5) == ord('s'):
+    elif cv2.waitKey(1) == ord('s'):
         data_list.append("s pressed")
-    elif cv2.waitKey(5) == ord('d'):
+    elif cv2.waitKey(1) == ord('d'):
         data_list.append("d pressed")
     else:
         data_list.append("nothing pressed")
@@ -158,13 +164,13 @@ def generate_data(data_list):
     print "Took "+str(total_time)+" seconds to generate data"
     return data_list
 
-    if 0xFF & cv2.waitKey(5) == ord('w'):
+    if 0xFF & cv2.waitKey(1) == ord('w'):
         data_list[3] = "w pressed"
-    elif 0xFF & cv2.waitKey(5) == ord('a'):
+    elif 0xFF & cv2.waitKey(1) == ord('a'):
         data_list[3] = "a pressed"
-    elif 0xFF & cv2.waitKey(5) == ord('s'):
+    elif 0xFF & cv2.waitKey(1) == ord('s'):
         data_list[3] = "s pressed"
-    elif 0xFF & cv2.waitKey(5) == ord('d'):
+    elif 0xFF & cv2.waitKey(1) == ord('d'):
         data_list[3] = "d pressed"
 
 def timetable(data_list):
@@ -254,16 +260,6 @@ def time(data_list):
     data_list.append("San Francisco | CA")
     return data_list
     
-def battery_Level(data_list):
-    """"""
-    data_list = []
-    data_list.append("Conor Forde")
-    data_list.append("Electronic Design Engineer")
-    data_list.append("me@conorforde.com")
-    data_list.append("(415) 423 4026")
-    data_list.append("linkedin.com/in/conorforde")
-    return data_list
-    
 def shopping_list(data_list):
     """"""
     data_list = []
@@ -274,16 +270,6 @@ def shopping_list(data_list):
     data_list.append("5. Phealeh Ticket")
     return data_list
     
-def travel_speed(data_list):
-    """"""
-    data_list = []
-    data_list.append("Conor Forde")
-    data_list.append("Electronic Design Engineer")
-    data_list.append("me@conorforde.com")
-    data_list.append("(415) 423 4026")
-    data_list.append("linkedin.com/in/conorforde")
-    return data_list
-    
 def skills(data_list):
     """"""
     data_list = []
@@ -292,36 +278,6 @@ def skills(data_list):
     data_list.append("OpenCV")
     data_list.append("Linux | Git")
     data_list.append("Embedded Systems")
-    return data_list
-
-def flight_data(data_list):
-    """"""
-    data_list = []
-    data_list.append("Conor Forde")
-    data_list.append("Electronic Design Engineer")
-    data_list.append("me@conorforde.com")
-    data_list.append("(415) 423 4026")
-    data_list.append("linkedin.com/in/conorforde")
-    return data_list
-
-def autocomplete(data_list):
-    """"""
-    data_list = []
-    data_list.append("Conor Forde")
-    data_list.append("Electronic Design Engineer")
-    data_list.append("me@conorforde.com")
-    data_list.append("(415) 423 4026")
-    data_list.append("linkedin.com/in/conorforde")
-    return data_list
-
-def search(data_list):
-    """"""
-    data_list = []
-    data_list.append("Conor Forde")
-    data_list.append("Electronic Design Engineer")
-    data_list.append("me@conorforde.com")
-    data_list.append("(415) 423 4026")
-    data_list.append("linkedin.com/in/conorforde")
     return data_list
 
 def business_card(data_list):
@@ -338,9 +294,31 @@ def corner_display(image):
     hour = str(datetime.datetime.now().hour)
     minute = str(datetime.datetime.now().minute)
 
-    y_size = image.shape[0]
+    #y_size = image.shape[0]
     x_size = image.shape[1]
-    draw_str(image, ((x_size - 60), 20), hour+":"+minute)
+
+    battery_data = open("/sys/class/power_supply/BAT1/capacity", "r").read()
+    battery_percent = re.sub(r"\?", "", str(battery_data))
+    draw_back_str(image, ((x_size - 60), 20), hour+":"+minute)
+    draw_back_str(image, ((x_size - 220), 20), "Battery: "+battery_percent+"%")
+
+def draw_back_str(image, x_by_y, text, alpha=0.8, padding=5):
+    before = image.copy()
+
+    height = 19
+
+    other_x = x_by_y[0]
+    other_y = x_by_y[1]
+    text_len = len(text)
+    rect_len = text_len*10
+
+    cv2.rectangle(image, (other_x-padding, other_y+padding), (other_x+rect_len-padding, other_y-height+padding), (0, 0, 0), -1)
+
+    neg_alpha = 1 - alpha
+    cv2.addWeighted(before, alpha, image, neg_alpha, 0, image)
+    draw_str(image, x_by_y, text)
+
+#incomming call
 
 def main():
     #print help_message
@@ -385,34 +363,34 @@ def main():
 
         #draw_rects(vis, rects, (0, 255, 0))
 
-        if (0xFF & cv2.waitKey(5) == ord('q')) and (current != "business card"):
+        if (0xFF & cv2.waitKey(1) == ord('q')) and (current != "business card"):
             data_list = business_card(data_list)
             current = "business card"
-        elif (0xFF & cv2.waitKey(5) == ord('w')) and (current != "time"):
+        elif (0xFF & cv2.waitKey(1) == ord('w')) and (current != "time"):
             data_list = time(data_list)
             current = "shopping list"
-        elif (0xFF & cv2.waitKey(5) == ord('e')) and (current != "facebook"):
+        elif (0xFF & cv2.waitKey(1) == ord('e')) and (current != "facebook"):
             data_list = facebook(data_list)
             current = "facebook"
-        elif (0xFF & cv2.waitKey(5) == ord('r'))and (current != "timetable"):
+        elif (0xFF & cv2.waitKey(1) == ord('r'))and (current != "timetable"):
             data_list = timetable(data_list)
             current = "timetable"
-        elif (0xFF & cv2.waitKey(5) == ord('t')) and (current != "todo list"):
+        elif (0xFF & cv2.waitKey(1) == ord('t')) and (current != "todo list"):
             data_list = todo_list(data_list)
             current = "todo_list"
-        elif (0xFF & cv2.waitKey(5) == ord('y')) and (current != "music"):
+        elif (0xFF & cv2.waitKey(1) == ord('y')) and (current != "music"):
             data_list = music(data_list)
             current = "music"
-        elif (0xFF & cv2.waitKey(5) == ord('u')) and (current != "settings"):
+        elif (0xFF & cv2.waitKey(1) == ord('u')) and (current != "settings"):
             data_list = settings(data_list)
             current = "settings"
-        elif (0xFF & cv2.waitKey(5) == ord('i')) and (current != "shopping list"):
+        elif (0xFF & cv2.waitKey(1) == ord('i')) and (current != "shopping list"):
             data_list = shopping_list(data_list)
             current = "shopping list"
-        elif (0xFF & cv2.waitKey(5) == ord('o')) and (current != "twitter"):
+        elif (0xFF & cv2.waitKey(1) == ord('o')) and (current != "twitter"):
             data_list = twitter(data_list)
             current = "twitter"
-        elif (0xFF & cv2.waitKey(5) == ord('p')) and (current != "skills"):
+        elif (0xFF & cv2.waitKey(1) == ord('p')) and (current != "skills"):
             data_list = skills(data_list)
             current = "skills"
 
@@ -423,13 +401,13 @@ def main():
         text_hover(vis, rects, data_list)
         #face_mask(vis, s_img, rects)
         #draw_eyes(vis, gray, rects, nested)
-        time_delay = display_fps(vis, time_delay)
+        #time_delay = display_fps(vis, time_delay)
 
         corner_display(vis)
 
         cv2.imshow('Laughing Man Mask', vis)
 
-        if 0xFF & cv2.waitKey(5) == 27:
+        if 0xFF & cv2.waitKey(1) == 27:
             break
     cv2.destroyAllWindows()
 
