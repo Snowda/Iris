@@ -9,10 +9,10 @@ from common import clock, draw_str
 
 import re, datetime, urllib2, twitter
 
-api = twitter.Api(consumer_key='',
-            consumer_secret='', access_token_key='',
-            access_token_secret='')
-user = ""
+api = twitter.Api(consumer_key='hZHPVKiNOi5JdDRBB1zFpQ',
+            consumer_secret='w6QcWKCLxVMf8cYlvoDy11D7eGcsiHP2cRIj94atg', access_token_key='67128905-QJuHCtpKCuqaqXoPGet2mxtkfBw8floZpgkMQNwbc',
+            access_token_secret='O0I1ZuIpn8APGfQGZOoY7puvZVdbJcBVmFIr3LXx0')
+user = "@MyOuterWorld"
 
 def detect(img, cascade, old_rects=None):
     rects = cascade.detectMultiScale(img, scaleFactor=1.3, minNeighbors=4, minSize=(30, 30), flags = cv2.CASCADE_SCALE_IMAGE)
@@ -132,7 +132,19 @@ def todays_date():
     return right_now.strftime('%B {S}, %Y').replace('{S}', 
         str(right_now.day) + suffix(right_now.day))
 
-def generate_data(data_list):
+def print_over_old(print_string):
+    """Prints a new line to the terminal and removes the previous line"""
+    sys.stdout.write("\r")
+    sys.stdout.write("                                                        ") 
+    sys.stdout.flush()
+    sys.stdout.write("\r")
+    sys.stdout.write(print_string) 
+    sys.stdout.flush()
+
+def generate_data(data_list=None):
+    if data_list == None:
+        data_list = []
+
     start_time = clock()
 
     data_list.append('Conor Forde')
@@ -342,65 +354,61 @@ def main():
     s_img = cv2.imread("laughing_man.png", -1) #GITS_laughingman.svg") # laugh.png
     x_offset=y_offset=0
 
-    data_list = []
-    data_list = generate_data(data_list)
+    data_list = generate_data()
     time_delay = clock()
 
-    current = "a"
-    old_current = "a"
+    current = "default"
+
+    option_list = { "q": "business card", "w": "time", "e": "facebook", "r": "timetable", 
+        "t": "todo list", "y": "music", "u": "settings", "i": "shopping list", "o": "twitter", "p": "skills"}
+
+    for option in option_list:
+        print option+" : "+option_list[option]
 
     while True:
         ret, img = cam.read()
         gray = cv2.equalizeHist(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY))
-
         rects = detect(gray, cascade, old_rects)
-
         old_rects = rects
 
         vis = img.copy()
 
         #width, height = cv2.frameSize(vis)
-
         #draw_rects(vis, rects, (0, 255, 0))
 
-        if (0xFF & cv2.waitKey(1) == ord('q')) and (current != "business card"):
+        if (0xFF & cv2.waitKey(1) == ord('q')) and (current != option_list["q"]):
             data_list = business_card(data_list)
-            current = "business card"
-        elif (0xFF & cv2.waitKey(1) == ord('w')) and (current != "time"):
+            current = option_list["q"]
+        elif (0xFF & cv2.waitKey(1) == ord('w')) and (current != option_list["w"]):
             data_list = time(data_list)
-            current = "shopping list"
-        elif (0xFF & cv2.waitKey(1) == ord('e')) and (current != "facebook"):
+            current = option_list["w"]
+        elif (0xFF & cv2.waitKey(1) == ord('e')) and (current != option_list["e"]):
             data_list = facebook(data_list)
-            current = "facebook"
-        elif (0xFF & cv2.waitKey(1) == ord('r'))and (current != "timetable"):
+            current = option_list["e"]
+        elif (0xFF & cv2.waitKey(1) == ord('r'))and (current != option_list["r"]):
             data_list = timetable(data_list)
-            current = "timetable"
-        elif (0xFF & cv2.waitKey(1) == ord('t')) and (current != "todo list"):
+            current = option_list["r"]
+        elif (0xFF & cv2.waitKey(1) == ord('t')) and (current != option_list["t"]):
             data_list = todo_list(data_list)
-            current = "todo_list"
-        elif (0xFF & cv2.waitKey(1) == ord('y')) and (current != "music"):
+            current = option_list["t"]
+        elif (0xFF & cv2.waitKey(1) == ord('y')) and (current != option_list["y"]):
             data_list = music(data_list)
-            current = "music"
-        elif (0xFF & cv2.waitKey(1) == ord('u')) and (current != "settings"):
+            current = option_list["y"]
+        elif (0xFF & cv2.waitKey(1) == ord('u')) and (current != option_list["u"]):
             data_list = settings(data_list)
-            current = "settings"
-        elif (0xFF & cv2.waitKey(1) == ord('i')) and (current != "shopping list"):
+            current = option_list["u"]
+        elif (0xFF & cv2.waitKey(1) == ord('i')) and (current != option_list["i"]):
             data_list = shopping_list(data_list)
-            current = "shopping list"
-        elif (0xFF & cv2.waitKey(1) == ord('o')) and (current != "twitter"):
+            current = option_list["i"]
+        elif (0xFF & cv2.waitKey(1) == ord('o')) and (current != option_list["o"]):
             data_list = twitter(data_list)
-            current = "twitter"
-        elif (0xFF & cv2.waitKey(1) == ord('p')) and (current != "skills"):
+            current = option_list["o"]
+        elif (0xFF & cv2.waitKey(1) == ord('p')) and (current != option_list["p"]):
             data_list = skills(data_list)
-            current = "skills"
+            current = option_list["p"]
 
-        if old_current != current:
-            print current
-            old_current = current
-
+        print_over_old(current)
         text_hover(vis, rects, data_list)
-        #face_mask(vis, s_img, rects)
-        #draw_eyes(vis, gray, rects, nested)
         #time_delay = display_fps(vis, time_delay)
 
         corner_display(vis)
@@ -409,6 +417,7 @@ def main():
 
         if 0xFF & cv2.waitKey(1) == 27:
             break
+    print "Exiting"
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
