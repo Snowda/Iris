@@ -15,12 +15,11 @@ api = twitter.Api(consumer_key='hZHPVKiNOi5JdDRBB1zFpQ',
 user = "@MyOuterWorld"
 
 def detect(img, cascade, old_rects=None):
+    if old_rects == None:
+        old_rects = []
     rects = cascade.detectMultiScale(img, scaleFactor=1.3, minNeighbors=4, minSize=(30, 30), flags = cv2.CASCADE_SCALE_IMAGE)
     if len(rects) == 0:
-        if old_rects == None:
-            return []
-        else:
-            return old_rects
+        return old_rects
     rects[:,2:] += rects[:,:2]
 
     for x1, y1, x2, y2 in rects:
@@ -73,7 +72,11 @@ def text_hover(image, face, text_data):
         else:
             x_axis = x2
         for position, words in enumerate(text_data):
-            draw_back_str(image, (x_axis, (y1-20+(20*position))), text_data[position - 1])
+            if y1 >= 30:
+                draw_back_str(image, (x_axis, (y1-20+(20*position))), text_data[position - 1])
+            else:
+                draw_back_str(image, (x_axis, 30+(20*position)), text_data[position - 1])
+
 
 def draw_eyes(image, gray, rects, nested, old_rects):
     for x1, y1, x2, y2 in rects:
@@ -331,51 +334,39 @@ def draw_back_str(image, x_by_y, text, alpha=0.8, padding=5):
     draw_str(image, x_by_y, text)
 
 #incomming call
+def detect_hands(img):
+    """"""
+    gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+    blur = cv2.GaussianBlur(gray,(5,5),0)
+    ret, thresh1 = cv2.threshold(blur, 70, 255, (cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU))
+    contours, hierarchy = cv2.findContours(thresh1, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    for i in range(len(contours)):
+        cnt=contours[i]
+        area = cv2.contourArea(cnt)
+        if(area>max_area):
+            max_area=area
+            ci=i
+        cnt=contours[ci]
+    hull = cv2.convexHull(cnt)
+    drawing = np.zeros(img.shape,np.uint8)
+    cv2.drawContours(drawing,[cnt],0,(0,255,0),2)
+    cv2.drawContours(drawing,[hull],0,(0,0,255),2)
+    hull = cv2.convexHull(cnt,returnPoints = False)
+    defects = cv2.convexityDefects(cnt,hull) 
+    mind=0
+    maxd=0
+    i=0
+    for i in range(defects.shape[0]):
+        s,e,f,d = defects[i,0]
+        start = tuple(cnt[s][0])
+        end = tuple(cnt[e][0])
+        far = tuple(cnt[f][0])
+        dist = cv2.pointPolygonTest(cnt,centr,True)
+        cv2.line(img,start,end,[0,255,0],2)                
+        cv2.circle(img,far,5,[0,0,255],-1)
+        print(i)
 
-def main():
-    #print help_message
-
-    args, video_src = getopt.getopt(sys.argv[1:], '', ['cascade=', 'nested-cascade='])
-    try:
-        video_src = video_src[0]
-    except:
-        video_src = 0
-    args = dict(args)
-    cascade_fn = args.get('--cascade', "../../data/haarcascades/haarcascade_frontalface_alt.xml")
-    nested_fn  = args.get('--nested-cascade', "../../data/haarcascades/haarcascade_eye.xml")
-
-    cascade = cv2.CascadeClassifier(cascade_fn)
-    nested = cv2.CascadeClassifier(nested_fn)
-
-    cam = create_capture(video_src, fallback='synth:bg=../cpp/lena.jpg:noise=0.05')
-
-    old_rects = []
-
-    s_img = cv2.imread("laughing_man.png", -1) #GITS_laughingman.svg") # laugh.png
-    x_offset=y_offset=0
-
-    data_list = generate_data()
-    time_delay = clock()
-
-    current = "default"
-
-    option_list = { "q": "business card", "w": "time", "e": "facebook", "r": "timetable", 
-        "t": "todo list", "y": "music", "u": "settings", "i": "shopping list", "o": "twitter", "p": "skills"}
-
-    for option in option_list:
-        print option+" : "+option_list[option]
-
-    while True:
-        ret, img = cam.read()
-        gray = cv2.equalizeHist(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY))
-        rects = detect(gray, cascade, old_rects)
-        old_rects = rects
-
-        vis = img.copy()
-
-        #width, height = cv2.frameSize(vis)
-        #draw_rects(vis, rects, (0, 255, 0))
-
+def read_keyboard(data_list, option_dict):
         if (0xFF & cv2.waitKey(1) == ord('q')) and (current != option_list["q"]):
             data_list = business_card(data_list)
             current = option_list["q"]
@@ -406,19 +397,62 @@ def main():
         elif (0xFF & cv2.waitKey(1) == ord('p')) and (current != option_list["p"]):
             data_list = skills(data_list)
             current = option_list["p"]
+        else:
+            current = "default"
 
         print_over_old(current)
+        return data_list
+
+def main():
+    cascade = cv2.CascadeClassifier(
+        "../../data/haarcascades/haarcascade_frontalface_alt.xml")
+    nested = cv2.CascadeClassifier(
+        "../../data/haarcascades/haarcascade_eye.xml")
+    hogg = cv2.CascadeClassifier(
+        "../../data/hogcascade/hogcascades_pedestrians.xml")
+
+    cam = create_capture(0)
+    old_rects = []
+    x_offset=y_offset=0
+
+    data_list = generate_data()
+    time_delay = clock()
+
+    option_list = { "q": "business card", "w": "time", "e": "facebook", 
+        "r": "timetable", "t": "todo list", "y": "music", "u": "settings", 
+        "i": "shopping list", "o": "twitter", "p": "skills"}
+
+    for option in option_list:
+        print option+" : "+option_list[option]
+
+    while True:
+        ret, img = cam.read()
+        gray = cv2.equalizeHist(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY))
+
+        #face = detect_hands(img)
+
+        rects = detect(gray, cascade, old_rects)
+        old_rects = rects
+
+        vis = img.copy()
+
+        #width, height = cv2.frameSize(vis)
+        #draw_rects(vis, rects, (0, 255, 0))
+
+        data_list = read_keyboard(data_list, option_list)
+
         text_hover(vis, rects, data_list)
         #time_delay = display_fps(vis, time_delay)
 
         corner_display(vis)
-
-        cv2.imshow('Laughing Man Mask', vis)
+        cv2.imshow('Project Iris', vis)
 
         if 0xFF & cv2.waitKey(1) == 27:
             break
-    print "Exiting"
+    print "\nExiting"
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
     main()
+
+#main.io
