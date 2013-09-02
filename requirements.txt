@@ -1,1 +1,6 @@
-"""list of dependencies"""
+list of dependencies
+=============
+OpenCV
+Numpy
+Python
+python-twitter
