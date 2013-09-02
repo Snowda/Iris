@@ -1,18 +1,57 @@
 #!/usr/bin/env python
 
 import numpy as np
-import cv2, getopt, sys
-
-# local modules
-from video import create_capture
-from common import clock, draw_str
-
-import re, datetime, urllib2, twitter
+import cv2, getopt, sys, re, datetime, urllib2, twitter
 
 api = twitter.Api(consumer_key='hZHPVKiNOi5JdDRBB1zFpQ',
             consumer_secret='w6QcWKCLxVMf8cYlvoDy11D7eGcsiHP2cRIj94atg', access_token_key='67128905-QJuHCtpKCuqaqXoPGet2mxtkfBw8floZpgkMQNwbc',
             access_token_secret='O0I1ZuIpn8APGfQGZOoY7puvZVdbJcBVmFIr3LXx0')
 user = "@MyOuterWorld"
+
+presets = dict(
+    empty = 'synth:',
+    lena = 'synth:bg=../cpp/lena.jpg:noise=0.1',
+    chess = 'synth:class=chess:bg=../cpp/lena.jpg:noise=0.1:size=640x480'
+)
+
+def create_capture(source = 0, fallback = presets['chess']):
+    '''source: <int> or '<int>|<filename>|synth [:<param_name>=<value> [:...]]'
+    '''
+    source = str(source).strip()
+    chunks = source.split(':')
+    # handle drive letter ('c:', ...)
+    if len(chunks) > 1 and len(chunks[0]) == 1 and chunks[0].isalpha():
+        chunks[1] = chunks[0] + ':' + chunks[1]
+        del chunks[0]
+
+    source = chunks[0]
+    try: source = int(source)
+    except ValueError: pass
+    params = dict( s.split('=') for s in chunks[1:] )
+
+    cap = None
+    if source == 'synth':
+        Class = classes.get(params.get('class', None), VideoSynthBase)
+        try: cap = Class(**params)
+        except: pass
+    else:
+        cap = cv2.VideoCapture(source)
+        if 'size' in params:
+            w, h = map(int, params['size'].split('x'))
+            cap.set(cv2.CAP_PROP_FRAME_WIDTH, w)
+            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, h)
+    if cap is None or not cap.isOpened():
+        print 'Warning: unable to open video source: ', source
+        if fallback is not None:
+            return create_capture(fallback, None)
+    return cap
+
+def clock():
+    return cv2.getTickCount() / cv2.getTickFrequency()
+
+def draw_str(dst, (x, y), s):
+    cv2.putText(dst, s, (x+1, y+1), cv2.FONT_HERSHEY_PLAIN, 1.0, (0, 0, 0), thickness = 2, lineType=cv2.LINE_AA)
+    cv2.putText(dst, s, (x, y), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), lineType=cv2.LINE_AA)
 
 def detect(img, cascade, old_rects=None):
     if old_rects == None:
@@ -281,7 +320,7 @@ def shopping_list(data_list):
     data_list.append("1. Shampoo")
     data_list.append("2. Toilet Paper")
     data_list.append("3. Eirdinger")
-    data_list.append("4. Toothpaste")
+    data_list.append("4. ")
     data_list.append("5. Phealeh Ticket")
     return data_list
     
@@ -317,7 +356,7 @@ def corner_display(image):
     draw_back_str(image, ((x_size - 60), 20), hour+":"+minute)
     draw_back_str(image, ((x_size - 220), 20), "Battery: "+battery_percent+"%")
 
-def draw_back_str(image, x_by_y, text, alpha=0.8, padding=5):
+def draw_back_str(image, x_by_y, text, color=(0,0,0), alpha=0.8, padding=5):
     before = image.copy()
 
     height = 19
@@ -327,7 +366,7 @@ def draw_back_str(image, x_by_y, text, alpha=0.8, padding=5):
     text_len = len(text)
     rect_len = text_len*10
 
-    cv2.rectangle(image, (other_x-padding, other_y+padding), (other_x+rect_len-padding, other_y-height+padding), (0, 0, 0), -1)
+    cv2.rectangle(image, (other_x-padding, other_y+padding), (other_x+rect_len-padding, other_y-height+padding), color, -1)
 
     neg_alpha = 1 - alpha
     cv2.addWeighted(before, alpha, image, neg_alpha, 0, image)
@@ -426,6 +465,7 @@ def main():
         print option+" : "+option_list[option]
 
     while True:
+        data_list = read_keyboard(data_list, option_list)
         ret, img = cam.read()
         gray = cv2.equalizeHist(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY))
 
@@ -438,8 +478,6 @@ def main():
 
         #width, height = cv2.frameSize(vis)
         #draw_rects(vis, rects, (0, 255, 0))
-
-        data_list = read_keyboard(data_list, option_list)
 
         text_hover(vis, rects, data_list)
         #time_delay = display_fps(vis, time_delay)
