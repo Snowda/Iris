@@ -382,42 +382,51 @@ def detect_hands(img):
         cv2.circle(img,far,5,[0,0,255],-1)
         print(i)
 
-def read_keyboard(data_list, option_dict):
+def read_keyboard(data_list, option_list, current):
         if (0xFF & cv2.waitKey(1) == ord('q')) and (current != option_list["q"]):
             data_list = business_card()
             current = option_list["q"]
+            print_over_old(current)
         elif (0xFF & cv2.waitKey(1) == ord('w')) and (current != option_list["w"]):
             data_list = time()
             current = option_list["w"]
+            print_over_old(current)
         elif (0xFF & cv2.waitKey(1) == ord('e')) and (current != option_list["e"]):
             data_list = facebook()
             current = option_list["e"]
+            print_over_old(current)
         elif (0xFF & cv2.waitKey(1) == ord('r'))and (current != option_list["r"]):
             data_list = timetable()
             current = option_list["r"]
+            print_over_old(current)
         elif (0xFF & cv2.waitKey(1) == ord('t')) and (current != option_list["t"]):
             data_list = todo_list()
             current = option_list["t"]
+            print_over_old(current)
         elif (0xFF & cv2.waitKey(1) == ord('y')) and (current != option_list["y"]):
             data_list = music()
             current = option_list["y"]
+            print_over_old(current)
         elif (0xFF & cv2.waitKey(1) == ord('u')) and (current != option_list["u"]):
             data_list = settings()
             current = option_list["u"]
+            print_over_old(current)
         elif (0xFF & cv2.waitKey(1) == ord('i')) and (current != option_list["i"]):
             data_list = shopping_list()
             current = option_list["i"]
+            print_over_old(current)
         elif (0xFF & cv2.waitKey(1) == ord('o')) and (current != option_list["o"]):
             #data_list = twitter()
             current = option_list["o"]
+            print_over_old(current)
         elif (0xFF & cv2.waitKey(1) == ord('p')) and (current != option_list["p"]):
             data_list = skills()
             current = option_list["p"]
+            print_over_old(current)
         else:
             current = "default"
 
-        print_over_old(current)
-        return data_list
+        return data_list, current
 
 def main():
     cascade = cv2.CascadeClassifier(
@@ -438,11 +447,13 @@ def main():
         "r": "timetable", "t": "todo list", "y": "music", "u": "settings", 
         "i": "shopping list", "o": "twitter", "p": "skills"}
 
+    current = "a"
+
     for option in option_list:
         print option+" : "+option_list[option]
 
     while True:
-        data_list = read_keyboard(data_list, option_list)
+        data_list, current = read_keyboard(data_list, option_list, current)
         ret, img = cam.read()
         gray = cv2.equalizeHist(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY))
 
