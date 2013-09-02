@@ -106,11 +106,11 @@ def text_hover(image, face, text_data):
             x_axis = 20
         else:
             x_axis = x2
-        for position, words in enumerate(text_data):
+        for position, key in enumerate(text_data):
             if y1 >= 30:
-                draw_back_str(image, (x_axis, (y1-20+(20*position))), text_data[position - 1], rect_color=(0,0,0))
+                draw_back_str(image, (x_axis, (y1-20+(20*position))), key, rect_color=text_data[key][1], text_color=text_data[key][0])
             else:
-                draw_back_str(image, (x_axis, 30+(20*position)), text_data[position - 1], rect_color=(0,0,0))
+                draw_back_str(image, (x_axis, 30+(20*position)), key, rect_color=text_data[key][1], text_color=text_data[key][0])
 
 def draw_eyes(image, gray, rects, nested, old_rects):
     for x1, y1, x2, y2 in rects:
@@ -178,54 +178,55 @@ def print_over_old(print_string):
     sys.stdout.write(print_string) 
     sys.stdout.flush()
 
-def generate_data(data_list=None):
-    if data_list == None:
-        data_list = []
+def generate_data():
+    data_dict = {}
 
-    data_list.append('Conor Forde')
-    data_list.append("Age | 22")
+    data_dict["Conor Forde"] = [(255,0,0), (0,0,0)]
+    data_dict["Age | 22"] = [(0,0,255), (0,0,0)]
 
     #country = get_country_name()
     #data_list.append(str(country))
 
     hour = datetime.datetime.now().hour
     if hour <= 7:
-        data_list.append("Should be asleep")
+        data_dict["Should be asleep"] = [(0,255,0), (0,0,0)]
     else:
-        data_list.append("Should be working")
+        data_dict["Should be working"] = [(0,255,0), (0,0,0)]
 
     if 0xFF & cv2.waitKey(1) == ord('w'):
-        data_list[3] = "w pressed"
+        data_dict["pressed w"] = [(255,255,255), (0,0,0)]
     elif 0xFF & cv2.waitKey(1) == ord('a'):
-        data_list[3] = "a pressed"
+        data_dict["pressed a"] = [(255,255,255), (0,0,0)]
     elif 0xFF & cv2.waitKey(1) == ord('s'):
-        data_list[3] = "s pressed"
+        data_dict["pressed s"] = [(255,255,255), (0,0,0)]
     elif 0xFF & cv2.waitKey(1) == ord('d'):
-        data_list[3] = "d pressed"
+        data_dict["pressed d"] = [(255,255,255), (0,0,0)]
     else:
-        data_list.append("nothing pressed")
+        data_dict["pressed nothing"] = [(255,255,255), (0,0,0)]
 
-    return data_list
+    return data_dict
 
 def timetable():
     """"""
-    data_list = []
-    data_list.append(" 9:00am Email Visa Office")
-    data_list.append("10:00am Talk to recruiters")
-    data_list.append("12:00am Update Git Repos")
-    data_list.append(" 2:00pm Get shampoo")
-    data_list.append(" 6:00pm Go to IoT Meetup")
-    return data_list
+    data_dict = {}
+    data_dict[" 9:00am Email Visa Office"] = [(255,255,255), (0,0,0)]
+    data_dict["10:00am Talk to recruiters"] = [(255,255,255), (0,0,0)]
+    data_dict["12:00am Update Git Repos"] = [(255,255,255), (0,0,0)]
+    data_dict[" 2:00pm Get shampoo"] = [(255,255,255), (0,0,0)]
+    data_dict[" 6:00pm Go to IoT Meetup"] = [(255,255,255), (0,0,0)]
+
+    return data_dict
 
 def todo_list():
     """"""
-    data_list = []
-    data_list.append("1 | Email Visa Office")
-    data_list.append("2 | Talk to recruiters")
-    data_list.append("3 | Update Git Repos")
-    data_list.append("4 | Get shampoo")
-    data_list.append("5 | Go to IoT Meetup")
-    return data_list
+    data_dict = {}
+    data_dict["1 | Email Visa Office"] = [(255,255,255), (0,0,0)]
+    data_dict["2 | Talk to recruiters"] = [(255,255,255), (0,0,0)]
+    data_dict["3 | Update Git Repos"] = [(255,255,255), (0,0,0)]
+    data_dict["4 | Get shampoo"] = [(255,255,255), (0,0,0)]
+    data_dict["5 | Go to IoT Meetup"] = [(255,255,255), (0,0,0)]
+
+    return data_dict
     
 def twitter():
     """"""
@@ -245,84 +246,90 @@ def twitter():
     #data_list.append("Following (164)")
     #data_list.append("Followers (50)")
     return data_list
-    
-def bank_account():
-    """"""
-    data_list = []
-    data_list.append("Conor Forde")
-    data_list.append("Electronic Design Engineer")
-    data_list.append("me@conorforde.com")
-    data_list.append("(415) 423 4026")
-    data_list.append("linkedin.com/in/conorforde")
-    return data_list
+
+    data_dict = {}
+    data_dict[""] = [(255,255,255), (0,0,0)]
+    data_dict[""] = [(255,255,255), (0,0,0)]
+    data_dict[""] = [(255,255,255), (0,0,0)]
+    data_dict[""] = [(255,255,255), (0,0,0)]
+    data_dict[""] = [(255,255,255), (0,0,0)]
+
+    return data_dict
     
 def settings():
     """"""
-    data_list = []
-    data_list.append("1. Keyboard Settigns")
-    data_list.append("2. Video Input")
-    data_list.append("3. Audio")
-    data_list.append("4. Privacy Settings")
-    data_list.append("5. User Settings")
-    return data_list
+    data_dict = {}
+    data_dict["1. Keyboard Settings"] = [(255,255,255), (0,0,0)]
+    data_dict["2. Video Input"] = [(255,255,255), (0,0,0)]
+    data_dict["3. Audio"] = [(255,255,255), (0,0,0)]
+    data_dict["4. Privacy Settings"] = [(255,255,255), (0,0,0)]
+    data_dict["5. User Settings"] = [(255,255,255), (0,0,0)]
+
+    return data_dict
     
 def music():
     """"""
-    data_list = []
-    data_list.append("Firestarter")
-    data_list.append("The Prodigy")
-    data_list.append("1:45 / 2:33")
-    data_list.append("(N)ext / (P)revious")
-    data_list.append("(S)top")
-    return data_list
+    data_dict = {}
+    data_dict["Firestarter"] = [(255,255,255), (0,0,0)]
+    data_dict["The Prodigy"] = [(255,255,255), (0,0,0)]
+    data_dict["1:45 / 2:33"] = [(255,255,255), (0,0,0)]
+    data_dict["(N)ext / (P)revious"] = [(255,255,255), (0,0,0)]
+    data_dict["(S)top"] = [(255,255,255), (0,0,0)]
+
+    return data_dict
     
 def facebook():
     """"""
-    data_list = []
-    data_list.append("Conor Forde")
-    data_list.append("233 Friends")
-    data_list.append("(0) Friend Requests")
-    data_list.append("(1) New Message")
-    data_list.append("(2) Updates")
-    return data_list
+    data_dict = {}
+    data_dict["Conor Forde"] = [(255,255,255), (0,0,0)]
+    data_dict["233 Friends"] = [(255,255,255), (0,0,0)]
+    data_dict["(0) Friend Requests"] = [(255,255,255), (0,0,0)]
+    data_dict["(1) New Message"] = [(255,255,255), (0,0,0)]
+    data_dict["(2) Updates"] = [(255,255,255), (0,0,0)]
+
+    return data_dict
     
 def time():
     """"""
-    data_list = []
     weekday = datetime.datetime.now().strftime("%A")
-    data_list.append(todays_date())
-    data_list.append("San Francisco | CA")
-    return data_list
+
+    data_dict = {}
+    data_dict[todays_date()] = [(255,255,255), (0,0,0)]
+    data_dict["San Francisco | CA"] = [(255,255,255), (0,0,0)]
+
+    return data_dict
     
 def shopping_list():
     """"""
-    data_list = []
-    data_list.append("1. Shampoo")
-    data_list.append("2. Toilet Paper")
-    data_list.append("3. Eirdinger")
-    data_list.append("4. ")
-    data_list.append("5. Phealeh Ticket")
-    return data_list
+    data_dict = {}
+    data_dict["1. Shampoo"] = [(255,255,255), (0,0,0)]
+    data_dict["2. Toilet Paper"] = [(255,255,255), (0,0,0)]
+    data_dict["3. Eirdinger"] = [(255,255,255), (0,0,0)]
+    data_dict["4. Phealeh Ticket"] = [(255,255,255), (0,0,0)]
+
+    return data_dict
     
 def skills():
     """"""
-    data_list = []
-    data_list.append("Skills")
-    data_list.append("C | C++ | Python")
-    data_list.append("OpenCV")
-    data_list.append("Linux | Git")
-    data_list.append("Embedded Systems")
-    return data_list
+    data_dict = {}
+    data_dict["Skills"] = [(255,255,255), (0,0,0)]
+    data_dict["C | C++ | Python"] = [(255,255,255), (0,0,0)]
+    data_dict["OpenCV"] = [(255,255,255), (0,0,0)]
+    data_dict["Linux | Git"] = [(255,255,255), (0,0,0)]
+    data_dict["Embedded Systems"] = [(255,255,255), (0,0,0)]
+
+    return data_dict
 
 def business_card():
     """"""
-    data_list = []
-    data_list.append("Conor Forde")
-    data_list.append("Electronic Design Engineer")
-    data_list.append("me@conorforde.com")
-    data_list.append("(415) 423 4026")
-    data_list.append("linkedin.com/in/conorforde")
-    return data_list
+    data_dict = {}
+    data_dict["Conor Forde"] = [(255,255,255), (0,0,0)]
+    data_dict["Electronic Design Engineer"] = [(255,255,255), (0,0,0)]
+    data_dict["me@conorforde.com"] = [(255,255,255), (0,0,0)]
+    data_dict["(415) 423 4026"] = [(255,255,255), (0,0,0)]
+    data_dict["linkedin.com/in/conorforde"] = [(255,255,255), (0,0,0)]
+
+    return data_dict
 
 def corner_display(image):
     hour = str(datetime.datetime.now().hour)
@@ -411,7 +418,7 @@ def read_keyboard(data_list, option_dict):
             data_list = shopping_list()
             current = option_list["i"]
         elif (0xFF & cv2.waitKey(1) == ord('o')) and (current != option_list["o"]):
-            data_list = twitter()
+            #data_list = twitter()
             current = option_list["o"]
         elif (0xFF & cv2.waitKey(1) == ord('p')) and (current != option_list["p"]):
             data_list = skills()
@@ -472,5 +479,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-#main.io
