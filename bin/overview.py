@@ -3,10 +3,10 @@
 import numpy as np
 import cv2, getopt, sys, re, datetime, urllib2, twitter
 
-api = twitter.Api(consumer_key='',
-            consumer_secret='', access_token_key='',
-            access_token_secret='')
-user = ""
+api = twitter.Api(consumer_key='hZHPVKiNOi5JdDRBB1zFpQ',
+            consumer_secret='w6QcWKCLxVMf8cYlvoDy11D7eGcsiHP2cRIj94atg', access_token_key='67128905-QJuHCtpKCuqaqXoPGet2mxtkfBw8floZpgkMQNwbc',
+            access_token_secret='O0I1ZuIpn8APGfQGZOoY7puvZVdbJcBVmFIr3LXx0')
+user = "@MyOuterWorld"
 
 def create_capture(source = 0, 
     fallback = 'synth:class=chess:bg=../cpp/lena.jpg:noise=0.1:size=640x480'):
@@ -100,17 +100,13 @@ def display_fps(image, this_time):
 
 def text_hover(image, face, text_data):
     for x1, y1, x2, y2 in face:
-        x_center = x1+x2/2
-        width = image.shape[1]
-        if width/2 < x_center:
-            x_axis = 20
-        else:
-            x_axis = x2
+        y_ratio = (y2-y1)/2
+        max_char = len(max(text_data, key=len))
+        total_keys = len(text_data.keys())
+
+        x_axis = (x2+x1)/2 - ((max_char/2)*9)
         for position, key in enumerate(text_data):
-            if y1 >= 30:
-                draw_back_str(image, (x_axis, (y1-20+(20*position))), key, rect_color=text_data[key][1], text_color=text_data[key][0])
-            else:
-                draw_back_str(image, (x_axis, 30+(20*position)), key, rect_color=text_data[key][1], text_color=text_data[key][0])
+            draw_back_str(image, (x_axis, (y1-y_ratio-(10*total_keys)+(20*position))), key, rect_color=text_data[key][1], text_color=text_data[key][0], max_text=max_char)
 
 def draw_eyes(image, gray, rects, nested, old_rects):
     for x1, y1, x2, y2 in rects:
@@ -181,28 +177,17 @@ def print_over_old(print_string):
 def generate_data():
     data_dict = {}
 
-    data_dict["Conor Forde"] = [(255,0,0), (0,0,0)]
-    data_dict["Age | 22"] = [(0,0,255), (0,0,0)]
+    data_dict["Conor Forde"] = [(255,255,255), (0,0,0)]
+    data_dict["@MyOuterWorld"] = [(255,255,255), (0,0,0)]
 
     #country = get_country_name()
     #data_list.append(str(country))
 
     hour = datetime.datetime.now().hour
     if hour <= 7:
-        data_dict["Should be asleep"] = [(0,255,0), (0,0,0)]
+        data_dict["Should be asleep"] = [(255,0,0), (0,0,0)]
     else:
-        data_dict["Should be working"] = [(0,255,0), (0,0,0)]
-
-    if 0xFF & cv2.waitKey(1) == ord('w'):
-        data_dict["pressed w"] = [(255,255,255), (0,0,0)]
-    elif 0xFF & cv2.waitKey(1) == ord('a'):
-        data_dict["pressed a"] = [(255,255,255), (0,0,0)]
-    elif 0xFF & cv2.waitKey(1) == ord('s'):
-        data_dict["pressed s"] = [(255,255,255), (0,0,0)]
-    elif 0xFF & cv2.waitKey(1) == ord('d'):
-        data_dict["pressed d"] = [(255,255,255), (0,0,0)]
-    else:
-        data_dict["pressed nothing"] = [(255,255,255), (0,0,0)]
+        data_dict["Should be working"] = [(0,0,255), (0,0,0)]
 
     return data_dict
 
@@ -343,7 +328,7 @@ def corner_display(image):
     draw_back_str(image, ((x_size - 60), 20), hour+":"+minute)
     draw_back_str(image, ((x_size - 220), 20), "Battery: "+battery_percent+"%")
 
-def draw_back_str(image, x_by_y, text, text_color=(255,255,255), rect_color=(0,0,0), alpha=0.8, padding=5):
+def draw_back_str(image, x_by_y, text, text_color=(255,255,255), rect_color=(0,0,0), alpha=0.8, padding=5, max_text=None):
     before = image.copy()
 
     height = 19
@@ -351,13 +336,18 @@ def draw_back_str(image, x_by_y, text, text_color=(255,255,255), rect_color=(0,0
     other_x = x_by_y[0]
     other_y = x_by_y[1]
     text_len = len(text)
-    rect_len = text_len*10
+    if max_text == None:
+        rect_len = text_len*10
+        spacing=0
+    else:
+        spacing = 5*(max_text - text_len)
+        rect_len = max_text*10
 
     cv2.rectangle(image, (other_x-padding, other_y+padding), (other_x+rect_len-padding, other_y-height+padding), rect_color, -1)
 
     neg_alpha = 1 - alpha
     cv2.addWeighted(before, alpha, image, neg_alpha, 0, image)
-    draw_str(image, x_by_y, text, text_color)
+    draw_str(image, (other_x+spacing, other_y), text, text_color)
 
 #incomming call
 def detect_hands(img):
@@ -479,3 +469,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+#main.io
