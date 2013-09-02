@@ -100,6 +100,9 @@ def display_fps(image, this_time):
 
 def text_hover(image, face, text_data):
     for x1, y1, x2, y2 in face:
+        x_center = (x1+x2)/2
+        y_center = (y1+y2)/2
+
         y_ratio = (y2-y1)/2
         max_char = len(max(text_data, key=len))
         total_keys = len(text_data.keys())
@@ -419,6 +422,20 @@ def read_keyboard(data_list, option_list, current):
 
         return data_list, current
 
+def looking(image, face):
+
+    y_size = image.shape[0]
+    x_size = image.shape[1]
+
+    for x1, y1, x2, y2 in face:
+        x_center = (x1+x2)/2
+        y_center = (y1+y2)/2
+
+        if (y_size/3 <= y_center <= y_size*2/3) and (x_size/3 <= x_center <= x_size*2/3):
+            return True
+        else:
+            return False
+
 def main():
     cascade = cv2.CascadeClassifier(
         "../../data/haarcascades/haarcascade_frontalface_alt.xml")
@@ -455,10 +472,15 @@ def main():
 
         vis = img.copy()
 
+        if looking(vis, rects):
+            text_hover(vis, rects, data_list)
+        else:
+            data_new = {data_list.keys()[0] : data_list[data_list.keys()[0]]}
+            text_hover(vis,rects, data_new)
+
         #width, height = cv2.frameSize(vis)
         #draw_rects(vis, rects, (0, 255, 0))
 
-        text_hover(vis, rects, data_list)
         #time_delay = display_fps(vis, time_delay)
 
         corner_display(vis)
@@ -471,5 +493,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-#main.io
