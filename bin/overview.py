@@ -3,10 +3,10 @@
 import numpy as np
 import cv2, getopt, sys, re, datetime, urllib2, twitter
 
-api = twitter.Api(consumer_key='hZHPVKiNOi5JdDRBB1zFpQ',
-            consumer_secret='w6QcWKCLxVMf8cYlvoDy11D7eGcsiHP2cRIj94atg', access_token_key='67128905-QJuHCtpKCuqaqXoPGet2mxtkfBw8floZpgkMQNwbc',
-            access_token_secret='O0I1ZuIpn8APGfQGZOoY7puvZVdbJcBVmFIr3LXx0')
-user = "@MyOuterWorld"
+api = twitter.Api(consumer_key='',
+            consumer_secret='', access_token_key='',
+            access_token_secret='')
+user = ""
 
 def create_capture(source = 0, 
     fallback = 'synth:class=chess:bg=../cpp/lena.jpg:noise=0.1:size=640x480'):
@@ -215,29 +215,20 @@ def todo_list():
     
 def twitter():
     """"""
-    data_list = []
+    data_dict = {}
     statuses = api.GetUserTimeline(user)
 
     for s in statuses[:5]:
         for x in range(0, 7):
             charso = 20*x
-            
-            data_list.append(s.text[charso-20:charso])
-        data_list.append(" ")
+            print s.text[charso-20:charso]
+            data_dict[s.text[charso-20:charso]] =[(255,255,255), (255, 153, 64)]
 
     #data_list.append("Conor Forde")
     #data_list.append("@MyOuterWorld")
     #data_list.append("Tweets (726)")
     #data_list.append("Following (164)")
     #data_list.append("Followers (50)")
-    return data_list
-
-    data_dict = {}
-    data_dict[""] = [(255,255,255), (0,0,0)]
-    data_dict[""] = [(255,255,255), (0,0,0)]
-    data_dict[""] = [(255,255,255), (0,0,0)]
-    data_dict[""] = [(255,255,255), (0,0,0)]
-    data_dict[""] = [(255,255,255), (0,0,0)]
 
     return data_dict
     
@@ -266,11 +257,11 @@ def music():
 def facebook():
     """"""
     data_dict = {}
-    data_dict["Conor Forde"] = [(255,255,255), (0,0,0)]
-    data_dict["233 Friends"] = [(255,255,255), (0,0,0)]
-    data_dict["(0) Friend Requests"] = [(255,255,255), (0,0,0)]
-    data_dict["(1) New Message"] = [(255,255,255), (0,0,0)]
-    data_dict["(2) Updates"] = [(255,255,255), (0,0,0)]
+    data_dict["Conor Forde"] = [(255,255,255), (152, 89, 59)]
+    data_dict["233 Friends"] = [(255,255,255), (152, 89, 59)]
+    data_dict["(0) Friend Requests"] = [(255,255,255), (152, 89, 59)]
+    data_dict["(1) New Message"] = [(255,255,255), (152, 89, 59)]
+    data_dict["(2) Updates"] = [(255,255,255), (152, 89, 59)]
 
     return data_dict
     
@@ -416,7 +407,7 @@ def read_keyboard(data_list, option_list, current):
             current = option_list["i"]
             print_over_old(current)
         elif (0xFF & cv2.waitKey(1) == ord('o')) and (current != option_list["o"]):
-            #data_list = twitter()
+            data_list = twitter()
             current = option_list["o"]
             print_over_old(current)
         elif (0xFF & cv2.waitKey(1) == ord('p')) and (current != option_list["p"]):
