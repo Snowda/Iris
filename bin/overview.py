@@ -3,18 +3,13 @@
 import numpy as np
 import cv2, getopt, sys, re, datetime, urllib2, twitter
 
-api = twitter.Api(consumer_key='hZHPVKiNOi5JdDRBB1zFpQ',
-            consumer_secret='w6QcWKCLxVMf8cYlvoDy11D7eGcsiHP2cRIj94atg', access_token_key='67128905-QJuHCtpKCuqaqXoPGet2mxtkfBw8floZpgkMQNwbc',
-            access_token_secret='O0I1ZuIpn8APGfQGZOoY7puvZVdbJcBVmFIr3LXx0')
-user = "@MyOuterWorld"
+api = twitter.Api(consumer_key='',
+            consumer_secret='', access_token_key='',
+            access_token_secret='')
+user = ""
 
-presets = dict(
-    empty = 'synth:',
-    lena = 'synth:bg=../cpp/lena.jpg:noise=0.1',
-    chess = 'synth:class=chess:bg=../cpp/lena.jpg:noise=0.1:size=640x480'
-)
-
-def create_capture(source = 0, fallback = presets['chess']):
+def create_capture(source = 0, 
+    fallback = 'synth:class=chess:bg=../cpp/lena.jpg:noise=0.1:size=640x480'):
     '''source: <int> or '<int>|<filename>|synth [:<param_name>=<value> [:...]]'
     '''
     source = str(source).strip()
@@ -47,11 +42,16 @@ def create_capture(source = 0, fallback = presets['chess']):
     return cap
 
 def clock():
+    """"""
     return cv2.getTickCount() / cv2.getTickFrequency()
 
-def draw_str(dst, (x, y), s):
-    cv2.putText(dst, s, (x+1, y+1), cv2.FONT_HERSHEY_PLAIN, 1.0, (0, 0, 0), thickness = 2, lineType=cv2.LINE_AA)
-    cv2.putText(dst, s, (x, y), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), lineType=cv2.LINE_AA)
+def draw_str(dst, (x, y), s, front_color=(255,255,255)):
+    #cv2.putText(dst, s, (x+1, y+1), cv2.FONT_HERSHEY_PLAIN, 1.0, (0, 0, 0), thickness = 2, lineType=cv2.LINE_AA)
+    cv2.putText(dst, s, (x, y), cv2.FONT_HERSHEY_PLAIN, 1.0, front_color, lineType=cv2.LINE_AA)
+
+def draw_rects(img, rects, color):
+    for x1, y1, x2, y2 in rects:
+        cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
 
 def detect(img, cascade, old_rects=None):
     if old_rects == None:
@@ -75,10 +75,6 @@ def detect(img, cascade, old_rects=None):
             rects = ((old_rects)*2 + (rects)) / 3
 
     return rects
-
-def draw_rects(img, rects, color):
-    for x1, y1, x2, y2 in rects:
-        cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
 
 def face_mask(image, mask, shape):
     for x1, y1, x2, y2 in shape:
@@ -112,10 +108,9 @@ def text_hover(image, face, text_data):
             x_axis = x2
         for position, words in enumerate(text_data):
             if y1 >= 30:
-                draw_back_str(image, (x_axis, (y1-20+(20*position))), text_data[position - 1])
+                draw_back_str(image, (x_axis, (y1-20+(20*position))), text_data[position - 1], rect_color=(0,0,0))
             else:
-                draw_back_str(image, (x_axis, 30+(20*position)), text_data[position - 1])
-
+                draw_back_str(image, (x_axis, 30+(20*position)), text_data[position - 1], rect_color=(0,0,0))
 
 def draw_eyes(image, gray, rects, nested, old_rects):
     for x1, y1, x2, y2 in rects:
@@ -187,8 +182,6 @@ def generate_data(data_list=None):
     if data_list == None:
         data_list = []
 
-    start_time = clock()
-
     data_list.append('Conor Forde')
     data_list.append("Age | 22")
 
@@ -201,23 +194,6 @@ def generate_data(data_list=None):
     else:
         data_list.append("Should be working")
 
-    if cv2.waitKey(1) == ord('w'):
-        data_list.append("w pressed")
-    elif cv2.waitKey(1) == ord('a'):
-        data_list.append("a pressed")
-    elif cv2.waitKey(1) == ord('s'):
-        data_list.append("s pressed")
-    elif cv2.waitKey(1) == ord('d'):
-        data_list.append("d pressed")
-    else:
-        data_list.append("nothing pressed")
-
-    print data_list
-
-    total_time = (clock() - start_time)
-    print "Took "+str(total_time)+" seconds to generate data"
-    return data_list
-
     if 0xFF & cv2.waitKey(1) == ord('w'):
         data_list[3] = "w pressed"
     elif 0xFF & cv2.waitKey(1) == ord('a'):
@@ -226,8 +202,12 @@ def generate_data(data_list=None):
         data_list[3] = "s pressed"
     elif 0xFF & cv2.waitKey(1) == ord('d'):
         data_list[3] = "d pressed"
+    else:
+        data_list.append("nothing pressed")
 
-def timetable(data_list):
+    return data_list
+
+def timetable():
     """"""
     data_list = []
     data_list.append(" 9:00am Email Visa Office")
@@ -237,7 +217,7 @@ def timetable(data_list):
     data_list.append(" 6:00pm Go to IoT Meetup")
     return data_list
 
-def todo_list(data_list):
+def todo_list():
     """"""
     data_list = []
     data_list.append("1 | Email Visa Office")
@@ -247,7 +227,7 @@ def todo_list(data_list):
     data_list.append("5 | Go to IoT Meetup")
     return data_list
     
-def twitter(data_list):
+def twitter():
     """"""
     data_list = []
     statuses = api.GetUserTimeline(user)
@@ -266,7 +246,7 @@ def twitter(data_list):
     #data_list.append("Followers (50)")
     return data_list
     
-def bank_account(data_list):
+def bank_account():
     """"""
     data_list = []
     data_list.append("Conor Forde")
@@ -276,7 +256,7 @@ def bank_account(data_list):
     data_list.append("linkedin.com/in/conorforde")
     return data_list
     
-def settings(data_list):
+def settings():
     """"""
     data_list = []
     data_list.append("1. Keyboard Settigns")
@@ -286,7 +266,7 @@ def settings(data_list):
     data_list.append("5. User Settings")
     return data_list
     
-def music(data_list):
+def music():
     """"""
     data_list = []
     data_list.append("Firestarter")
@@ -296,7 +276,7 @@ def music(data_list):
     data_list.append("(S)top")
     return data_list
     
-def facebook(data_list):
+def facebook():
     """"""
     data_list = []
     data_list.append("Conor Forde")
@@ -306,7 +286,7 @@ def facebook(data_list):
     data_list.append("(2) Updates")
     return data_list
     
-def time(data_list):
+def time():
     """"""
     data_list = []
     weekday = datetime.datetime.now().strftime("%A")
@@ -314,7 +294,7 @@ def time(data_list):
     data_list.append("San Francisco | CA")
     return data_list
     
-def shopping_list(data_list):
+def shopping_list():
     """"""
     data_list = []
     data_list.append("1. Shampoo")
@@ -324,7 +304,7 @@ def shopping_list(data_list):
     data_list.append("5. Phealeh Ticket")
     return data_list
     
-def skills(data_list):
+def skills():
     """"""
     data_list = []
     data_list.append("Skills")
@@ -334,7 +314,7 @@ def skills(data_list):
     data_list.append("Embedded Systems")
     return data_list
 
-def business_card(data_list):
+def business_card():
     """"""
     data_list = []
     data_list.append("Conor Forde")
@@ -356,7 +336,7 @@ def corner_display(image):
     draw_back_str(image, ((x_size - 60), 20), hour+":"+minute)
     draw_back_str(image, ((x_size - 220), 20), "Battery: "+battery_percent+"%")
 
-def draw_back_str(image, x_by_y, text, color=(0,0,0), alpha=0.8, padding=5):
+def draw_back_str(image, x_by_y, text, text_color=(255,255,255), rect_color=(0,0,0), alpha=0.8, padding=5):
     before = image.copy()
 
     height = 19
@@ -366,11 +346,11 @@ def draw_back_str(image, x_by_y, text, color=(0,0,0), alpha=0.8, padding=5):
     text_len = len(text)
     rect_len = text_len*10
 
-    cv2.rectangle(image, (other_x-padding, other_y+padding), (other_x+rect_len-padding, other_y-height+padding), color, -1)
+    cv2.rectangle(image, (other_x-padding, other_y+padding), (other_x+rect_len-padding, other_y-height+padding), rect_color, -1)
 
     neg_alpha = 1 - alpha
     cv2.addWeighted(before, alpha, image, neg_alpha, 0, image)
-    draw_str(image, x_by_y, text)
+    draw_str(image, x_by_y, text, text_color)
 
 #incomming call
 def detect_hands(img):
@@ -407,34 +387,34 @@ def detect_hands(img):
 
 def read_keyboard(data_list, option_dict):
         if (0xFF & cv2.waitKey(1) == ord('q')) and (current != option_list["q"]):
-            data_list = business_card(data_list)
+            data_list = business_card()
             current = option_list["q"]
         elif (0xFF & cv2.waitKey(1) == ord('w')) and (current != option_list["w"]):
-            data_list = time(data_list)
+            data_list = time()
             current = option_list["w"]
         elif (0xFF & cv2.waitKey(1) == ord('e')) and (current != option_list["e"]):
-            data_list = facebook(data_list)
+            data_list = facebook()
             current = option_list["e"]
         elif (0xFF & cv2.waitKey(1) == ord('r'))and (current != option_list["r"]):
-            data_list = timetable(data_list)
+            data_list = timetable()
             current = option_list["r"]
         elif (0xFF & cv2.waitKey(1) == ord('t')) and (current != option_list["t"]):
-            data_list = todo_list(data_list)
+            data_list = todo_list()
             current = option_list["t"]
         elif (0xFF & cv2.waitKey(1) == ord('y')) and (current != option_list["y"]):
-            data_list = music(data_list)
+            data_list = music()
             current = option_list["y"]
         elif (0xFF & cv2.waitKey(1) == ord('u')) and (current != option_list["u"]):
-            data_list = settings(data_list)
+            data_list = settings()
             current = option_list["u"]
         elif (0xFF & cv2.waitKey(1) == ord('i')) and (current != option_list["i"]):
-            data_list = shopping_list(data_list)
+            data_list = shopping_list()
             current = option_list["i"]
         elif (0xFF & cv2.waitKey(1) == ord('o')) and (current != option_list["o"]):
-            data_list = twitter(data_list)
+            data_list = twitter()
             current = option_list["o"]
         elif (0xFF & cv2.waitKey(1) == ord('p')) and (current != option_list["p"]):
-            data_list = skills(data_list)
+            data_list = skills()
             current = option_list["p"]
         else:
             current = "default"
