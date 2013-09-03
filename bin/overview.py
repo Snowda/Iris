@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 """Project Iris"""
 
-import numpy as np
 import cv2, sys, re, datetime, urllib2, twitter
+import numpy as np
+from numpy import pi, sin, cos
 
 api = twitter.Api(consumer_key='',
     consumer_secret='', 
@@ -10,10 +11,99 @@ api = twitter.Api(consumer_key='',
     access_token_secret='')
 user = ""
 
+class VideoSynthBase(object):
+    """ """
+    def __init__(self, size=None, noise=0.0, bg = None, **params):
+        self.bg = None
+        self.frame_size = (640, 480)
+        if bg is not None:
+            self.bg = cv2.imread(bg, 1)
+            heigth, width = self.bg.shape[:2]
+            self.frame_size = (width, heigth)
+
+        if size is not None:
+            width, heigth = map(int, size.split('x'))
+            self.frame_size = (width, heigth)
+            self.bg = cv2.resize(self.bg, self.frame_size)
+
+        self.noise = float(noise)
+
+    def read(self, dst=None):
+        """ """
+        width, heigth = self.frame_size
+
+        if self.bg is None:
+            buf = np.zeros((heigth, width, 3), np.uint8)
+        else:
+            buf = self.bg.copy()
+
+        if self.noise > 0.0:
+            noise = np.zeros((heigth, width, 3), np.int8)
+            cv2.randn(noise, np.zeros(3), np.ones(3)*255*self.noise)
+            buf = cv2.add(buf, noise, dtype=cv2.CV_8UC3)
+        return True, buf
+
+    def is_opened(self):
+        """ """
+        return True
+
+class Chess(VideoSynthBase):
+    """ """
+    def __init__(self, **kw):
+        super(Chess, self).__init__(**kw)
+
+        width, heigth = self.frame_size
+
+        self.grid_size = sx, sy = 10, 7
+        white_quads = []
+        black_quads = []
+        for i, j in np.ndindex(sy, sx):
+            q = [[j, i, 0], [j+1, i, 0], [j+1, i+1, 0], [j, i+1, 0]]
+            [white_quads, black_quads][(i + j) % 2].append(q)
+        self.white_quads = np.float32(white_quads)
+        self.black_quads = np.float32(black_quads)
+
+        fx = 0.9
+        self.K = np.float64([[fx*width, 0, 0.5*(width-1)],
+                        [0, fx*width, 0.5*(heigth-1)],
+                        [0.0,0.0,      1.0]])
+
+        self.dist_coef = np.float64([-0.2, 0.1, 0, 0])
+        self.t = 0
+
+    def draw_quads(self, img, quads, color = (0, 255, 0)):
+        """ """
+        img_quads = cv2.projectPoints(quads.reshape(-1, 3), self.rvec, 
+            self.tvec, self.K, self.dist_coef) [0]
+        img_quads.shape = quads.shape[:2] + (2,)
+        for q in img_quads:
+            cv2.fillConvexPoly(img, np.int32(q*4), color, cv2.LINE_AA, shift=2)
+
+    def render(self, dst):
+        """ """
+        t = self.t
+        self.t += 1.0/30.0
+
+        sx, sy = self.grid_size
+        center = np.array([0.5*sx, 0.5*sy, 0.0])
+        phi = pi/3 + sin(t*3)*pi/8
+        cos_phi, sin_phi = cos(phi), sin(phi)
+        ofs = np.array([sin(1.2*t), cos(1.8*t), 0]) * sx * 0.2
+        eye_pos = center + np.array([cos(t)*cos_phi, 
+            sin(t)*cos_phi, sin_phi]) * 15.0 + ofs
+        target_pos = center + ofs
+
+        R, self.tvec = common.lookat(eye_pos, target_pos)
+        self.rvec = common.mtx2rvec(R)
+
+        self.draw_quads(dst, self.white_quads, (245, 245, 245))
+        self.draw_quads(dst, self.black_quads, (10, 10, 10))
+        
 def create_capture(source = 0, 
     fallback = 'synth:class=chess:bg=../cpp/lena.jpg:noise=0.1:size=640x480'):
     '''source: <int> or '<int>|<filename>|synth [:<param_name>=<value> [:...]]'
     '''
+    classes = dict(chess=Chess)
     source = str(source).strip()
     chunks = source.split(':')
     # handle drive letter ('c:', ...)
@@ -22,22 +112,26 @@ def create_capture(source = 0,
         del chunks[0]
 
     source = chunks[0]
-    try: source = int(source)
-    except ValueError: pass
+    try:
+        source = int(source)
+    except ValueError: 
+        pass
     params = dict( s.split('=') for s in chunks[1:] )
 
     cap = None
     if source == 'synth':
-        Class = classes.get(params.get('class', None), VideoSynthBase)
-        try: cap = Class(**params)
-        except: pass
+        vid_class = classes.get(params.get('class', None), VideoSynthBase)
+        try: 
+            cap = vid_class(**params)
+        except ValueError: 
+            pass
     else:
         cap = cv2.VideoCapture(source)
         if 'size' in params:
-            w, h = map(int, params['size'].split('x'))
-            cap.set(cv2.CAP_PROP_FRAME_WIDTH, w)
-            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, h)
-    if cap is None or not cap.isOpened():
+            width, height = map(int, params['size'].split('x'))
+            cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+    if cap is None or not cap.is_opened():
         print 'Warning: unable to open video source: ', source
         if fallback is not None:
             return create_capture(fallback, None)
@@ -46,12 +140,6 @@ def create_capture(source = 0,
 def clock():
     """gets current clock"""
     return cv2.getTickCount() / cv2.getTickFrequency()
-
-def draw_str(dst, (x,  y),  s,  front_color=(255, 255, 255)):
-    """draws strings"""
-    #cv2.putText(dst, s, (x+1, y+1), cv2.FONT_HERSHEY_PLAIN, 1.0, (0, 0, 0), thickness = 2, lineType=cv2.LINE_AA)
-    cv2.putText(dst, s, (x, y), cv2.FONT_HERSHEY_PLAIN, 1.0, front_color, 
-        lineType=cv2.LINE_AA)
 
 def draw_rects(img, rects, color):
     """draws rectangles"""
@@ -94,10 +182,17 @@ def face_mask(image, mask, shape):
         else:
             scaled_mask = mask
 
-        #image[y_left:y_left+scaled_mask.shape[0], x_left:x_left+scaled_mask.shape[1]] = scaled_mask
+        #image[y_left:y_left+scaled_mask.shape[0], 
+        #x_left:x_left+scaled_mask.shape[1]] = scaled_mask
 
-        for c in range(0, 3):
-            image[y_left:y_left+scaled_mask.shape[0], x_left:x_left+scaled_mask.shape[1],  c] = scaled_mask[:, :, c] * (scaled_mask[:, :, 3]/255.0) + image[y_left:y_left+scaled_mask.shape[0],  x_left:x_left+scaled_mask.shape[1],  c] * (1.0 - scaled_mask[:, :, 3]/255.0)
+        for color in range(0, 3):
+            image[y_left:y_left+scaled_mask.shape[0], 
+                x_left:x_left+scaled_mask.shape[1],  
+                color] = scaled_mask[:, :, 
+                    color] * (scaled_mask[:, :, 
+                        3]/255.0) + image[y_left:y_left+scaled_mask.shape[0],  
+                x_left:x_left+scaled_mask.shape[1],  
+                color] * (1.0 - scaled_mask[:, :, 3]/255.0)
 
 def display_fps(image, this_time):
     """display current frame rate (Frames Per Second)"""
@@ -109,9 +204,6 @@ def display_fps(image, this_time):
 def text_hover(image, face, text_data):
     """Hover text over heads"""
     for x_left, y_left, x_right, y_right in face:
-        x_center = (x_left+x_right)/2
-        y_center = (y_left+y_right)/2
-
         y_ratio = (y_right-y_left)/2
         max_char = len(max(text_data, key=len))
         total_keys = len(text_data.keys())
@@ -141,13 +233,13 @@ def target_online(url_to_check, return_string=False):
     try:
         connection = urllib2.urlopen(url_to_check, timeout=2) 
         # Create the Request.
-    except urllib2.URLError, e:
+    except urllib2.URLError, error:
         if(return_string):
             if internet_on():
                 print "Connetion to target timed out. Try again."
             else :
                 print "No internet connection. Check your connectivity."
-            print "Error: "+str(e)
+            print "Error: "+str(error)
         return False
     else:
         if(return_string):
@@ -231,16 +323,17 @@ def todo_list():
 
     return data_dict
     
-def twitter():
+def display_twitter():
     """twitter data"""
     data_dict = {}
     statuses = api.GetUserTimeline(user)
 
-    for s in statuses[:5]:
-        for x in range(0, 7):
-            charso = 20*x
-            print s.text[charso-20:charso]
-            data_dict[s.text[charso-20:charso]] =[(255,255,255), (255, 153, 64)]
+    for this_status in statuses[:5]:
+        for max_string in range(0, 7):
+            charso = 20*max_string
+            print this_status.text[charso-20:charso]
+            data_dict[this_status.text[charso-20:charso]] = [(255, 255, 255), 
+                (255,  153,  64)]
 
     #data_list.append("Conor Forde")
     #data_list.append("@MyOuterWorld")
@@ -285,8 +378,6 @@ def facebook():
     
 def time():
     """return the time and location"""
-    weekday = datetime.datetime.now().strftime("%A")
-
     data_dict = {}
     data_dict[todays_date()] = [(255, 255, 255), (0, 0, 0)]
     data_dict["San Francisco | CA"] = [(255, 255, 255), (0, 0, 0)]
@@ -338,7 +429,7 @@ def corner_display(image):
     draw_back_str(image, ((x_size - 60), 20), hour+":"+minute)
     draw_back_str(image, ((x_size - 220), 20), "Battery: "+battery_percent+"%")
 
-def draw_back_str(image, x_by_y,  text,  text_color=(255, 255, 255), 
+def draw_back_str(image, x_by_y,  text, text_color=(255, 255, 255), 
     rect_color=(0, 0, 0),  alpha=0.8,  padding=5,  max_text=None):
     """Draw a string with a background for contrast"""
     before = image.copy()
@@ -360,42 +451,11 @@ def draw_back_str(image, x_by_y,  text,  text_color=(255, 255, 255),
 
     neg_alpha = 1 - alpha
     cv2.addWeighted(before, alpha, image, neg_alpha, 0, image)
-    draw_str(image, (other_x+spacing, other_y), text, text_color)
+    cv2.putText(image, text, (other_x+spacing, other_y), 
+        cv2.FONT_HERSHEY_PLAIN, 1.0, text_color, lineType=cv2.LINE_AA)
+
 
 #incomming call
-def detect_hands(img):
-    """Detects hands. Currently not working"""
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    blur = cv2.GaussianBlur(gray, (5, 5), 0)
-    ret, thresh1 = cv2.threshold(blur, 70, 255, 
-        (cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU))
-    contours, hierarchy = cv2.findContours(thresh1, cv2.RETR_TREE, 
-        cv2.CHAIN_APPROX_SIMPLE)
-    for i in range(len(contours)):
-        cnt = contours[i]
-        area = cv2.contourArea(cnt)
-        if(area>max_area):
-            max_area = area
-            ci = i
-        cnt = contours[ci]
-    hull = cv2.convexHull(cnt)
-    drawing = np.zeros(img.shape, np.uint8)
-    cv2.drawContours(drawing, [cnt], 0, (0, 255, 0), 2)
-    cv2.drawContours(drawing, [hull], 0, (0, 0, 255), 2)
-    hull = cv2.convexHull(cnt, returnPoints = False)
-    defects = cv2.convexityDefects(cnt, hull) 
-    mind = 0
-    maxd = 0
-    i = 0
-    for i in range(defects.shape[0]):
-        s, e, f, d = defects[i, 0]
-        start = tuple(cnt[s][0])
-        end = tuple(cnt[e][0])
-        far = tuple(cnt[f][0])
-        dist = cv2.pointPolygonTest(cnt, centr, True)
-        cv2.line(img, start, end, [0, 255, 0], 2)                
-        cv2.circle(img, far, 5, [0, 0, 255], -1)
-        print(i)
 
 def read_keyboard(data_list, option_list, current):
     """Checks keyboard for a different input"""
@@ -432,7 +492,7 @@ def read_keyboard(data_list, option_list, current):
         current = option_list["i"]
         print_over_old(current)
     elif (0xFF & cv2.waitKey(1) == ord('o')) and (current != option_list["o"]):
-        data_list = twitter()
+        data_list = display_twitter()
         current = option_list["o"]
         print_over_old(current)
     elif (0xFF & cv2.waitKey(1) == ord('p')) and (current != option_list["p"]):
@@ -451,10 +511,10 @@ def looking(image, face):
     x_size = image.shape[1]
 
     for x_left, y_left, x_right, y_right in face:
-        x_center = (x_left+x_right)/2
-        y_center = (y_left+y_right)/2
+        x_mid = (x_left+x_right)/2
+        y_mid = (y_left+y_right)/2
 
-        if (y_size/3 <= y_center <= y_size*2/3) and (x_size/3 <= x_center <= x_size*2/3):
+        if (y_size/3 <=y_mid<= y_size*2/3) and (x_size/3 <=x_mid<= x_size*2/3):
             return True
         else:
             return False
@@ -485,10 +545,8 @@ def main():
 
     while True:
         data_list, current = read_keyboard(data_list, option_list, current)
-        ret, img = cam.read()
+        img = cam.read()[1]
         gray = cv2.equalizeHist(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY))
-
-        #face = detect_hands(img)
 
         rects = detect(gray, cascade, old_rects)
         old_rects = rects
