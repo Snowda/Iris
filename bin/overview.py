@@ -12,30 +12,32 @@ api = twitter.Api(consumer_key='',
 user = ""
 
 class VideoSynthBase(object):
-    """ """
-    def __init__(self, size=None, noise=0.0, bg = None, **params):
-        self.bg = None
+    """
+    Generates video (I think). seriously, go over this code to understand it
+    """
+    def __init__(self, size=None, noise=0.0, fallback = None, **params):
+        self.fallback = None
         self.frame_size = (640, 480)
-        if bg is not None:
-            self.bg = cv2.imread(bg, 1)
-            heigth, width = self.bg.shape[:2]
+        if fallback is not None:
+            self.fallback = cv2.imread(fallback, 1)
+            heigth, width = self.fallback.shape[:2]
             self.frame_size = (width, heigth)
 
         if size is not None:
             width, heigth = map(int, size.split('x'))
             self.frame_size = (width, heigth)
-            self.bg = cv2.resize(self.bg, self.frame_size)
+            self.fallback = cv2.resize(self.fallback, self.frame_size)
 
         self.noise = float(noise)
 
     def read(self, dst=None):
-        """ """
+        """reads the video"""
         width, heigth = self.frame_size
 
-        if self.bg is None:
+        if self.fallback is None:
             buf = np.zeros((heigth, width, 3), np.uint8)
         else:
-            buf = self.bg.copy()
+            buf = self.fallback.copy()
 
         if self.noise > 0.0:
             noise = np.zeros((heigth, width, 3), np.int8)
@@ -44,63 +46,65 @@ class VideoSynthBase(object):
         return True, buf
 
     def is_opened(self):
-        """ """
+        """Always true. Probably can be refactored out"""
         return True
 
 class Chess(VideoSynthBase):
-    """ """
+    """child class of video synth. I believe it draws checkers"""
     def __init__(self, **kw):
         super(Chess, self).__init__(**kw)
 
         width, heigth = self.frame_size
 
-        self.grid_size = sx, sy = 10, 7
+        self.grid_size = x_size, y_size = 10, 7
         white_quads = []
         black_quads = []
-        for i, j in np.ndindex(sy, sx):
-            q = [[j, i, 0], [j+1, i, 0], [j+1, i+1, 0], [j, i+1, 0]]
-            [white_quads, black_quads][(i + j) % 2].append(q)
+        for i, j in np.ndindex(y_size, x_size):
+            che_q = [[j, i, 0], [j+1, i, 0], [j+1, i+1, 0], [j, i+1, 0]]
+            [white_quads, black_quads][(i + j) % 2].append(che_q)
         self.white_quads = np.float32(white_quads)
         self.black_quads = np.float32(black_quads)
 
-        fx = 0.9
-        self.K = np.float64([[fx*width, 0, 0.5*(width-1)],
-                        [0, fx*width, 0.5*(heigth-1)],
-                        [0.0,0.0,      1.0]])
+        weight_factor = 0.9
+        self.camera_matrix = np.float64([[weight_factor*width, 0, 
+            0.5*(width-1)],
+            [0, weight_factor*width, 0.5*(heigth-1)],
+            [0.0,0.0,      1.0]])
 
         self.dist_coef = np.float64([-0.2, 0.1, 0, 0])
-        self.t = 0
+        self.angle_t = 0
 
     def draw_quads(self, img, quads, color = (0, 255, 0)):
-        """ """
+        """draw pattern"""
         img_quads = cv2.projectPoints(quads.reshape(-1, 3), self.rvec, 
-            self.tvec, self.K, self.dist_coef) [0]
+            self.tvec, self.camera_matrix, self.dist_coef) [0]
         img_quads.shape = quads.shape[:2] + (2,)
-        for q in img_quads:
-            cv2.fillConvexPoly(img, np.int32(q*4), color, cv2.LINE_AA, shift=2)
+        for che_q in img_quads:
+            cv2.fillConvexPoly(img, np.int32(che_q*4), color, 
+                cv2.LINE_AA, shift=2)
 
     def render(self, dst):
-        """ """
-        t = self.t
-        self.t += 1.0/30.0
+        """render the video"""
+        angle_t = self.angle_t
+        self.angle_t += 1.0/30.0
 
-        sx, sy = self.grid_size
-        center = np.array([0.5*sx, 0.5*sy, 0.0])
-        phi = pi/3 + sin(t*3)*pi/8
+        x_size, y_size = self.grid_size
+        center = np.array([0.5*x_size, 0.5*y_size, 0.0])
+        phi = pi/3 + sin(angle_t*3)*pi/8
         cos_phi, sin_phi = cos(phi), sin(phi)
-        ofs = np.array([sin(1.2*t), cos(1.8*t), 0]) * sx * 0.2
-        eye_pos = center + np.array([cos(t)*cos_phi, 
-            sin(t)*cos_phi, sin_phi]) * 15.0 + ofs
+        ofs = np.array([sin(1.2*angle_t), cos(1.8*angle_t), 0]) * x_size * 0.2
+        eye_pos = center + np.array([cos(angle_t)*cos_phi, 
+            sin(angle_t)*cos_phi, sin_phi]) * 15.0 + ofs
         target_pos = center + ofs
 
-        R, self.tvec = common.lookat(eye_pos, target_pos)
-        self.rvec = common.mtx2rvec(R)
+        mtx, self.tvec = common.lookat(eye_pos, target_pos)
+        self.rvec = common.mtx2rvec(mtx)
 
         self.draw_quads(dst, self.white_quads, (245, 245, 245))
         self.draw_quads(dst, self.black_quads, (10, 10, 10))
         
 def create_capture(source = 0, 
-    fallback = 'synth:class=chess:bg=../cpp/lena.jpg:noise=0.1:size=640x480'):
+    fallback='synth:class=chess:fallback=../cpp/lena.jpg:size=640x480'):
     '''source: <int> or '<int>|<filename>|synth [:<param_name>=<value> [:...]]'
     '''
     classes = dict(chess=Chess)
@@ -131,7 +135,7 @@ def create_capture(source = 0,
             width, height = map(int, params['size'].split('x'))
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
             cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-    if cap is None or not cap.is_opened():
+    if cap is None:
         print 'Warning: unable to open video source: ', source
         if fallback is not None:
             return create_capture(fallback, None)
@@ -453,7 +457,6 @@ def draw_back_str(image, x_by_y,  text, text_color=(255, 255, 255),
     cv2.addWeighted(before, alpha, image, neg_alpha, 0, image)
     cv2.putText(image, text, (other_x+spacing, other_y), 
         cv2.FONT_HERSHEY_PLAIN, 1.0, text_color, lineType=cv2.LINE_AA)
-
 
 #incomming call
 
