@@ -15,7 +15,13 @@ class TestIris(unittest.TestCase):
             pass
 
     def test_span_offset_args(self):
+        """"""
+        print("TODO Test")
     
     def test_zero_offset_args(self):
+        """"""
+        print("TODO Test")
     
     def test_bit_offset_args(self):
+        print("TODO Test")
+        """"""

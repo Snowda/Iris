@@ -9,6 +9,7 @@ import numpy as np
 from numpy import pi, sin, cos
 from pygeoip import GeoIP
 from twitter import Api
+import common
 
 API = Api(consumer_key='', consumer_secret='', access_token_key='', access_token_secret='')
 USER = ""
@@ -233,17 +234,6 @@ def target_online(url_to_check, return_string=False):
     print(connection.status_code, connection.reason)
     return False
 
-def get_country_name():
-    """ Using IP lookup tables, checks user's location. Won't work behind proxy"""
-    connection = get(IP_CHECK_URL, timeout=2)
-
-    if connection.status == 200:
-        response = re.search(re.compile(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"), ip_data).group()
-        return GeoIP('data/GeoIP.dat').country_name_by_name(response) #country_code_by_name
-
-    print(connection.status_code, connection.reason)
-    return "Location not found"
-
 def suffix(day):
     """function which picks a date suffix depending on the date"""
     if 11 <= day <= 13:
@@ -269,10 +259,7 @@ def generate_data():
     """Generate raw initialization data"""
     data_dict = {}
     data_dict["Conor Forde"] = [(255, 255, 255), (0, 0, 0)]
-    data_dict["@MyOuterWorld"] = [(255, 255, 255), (0, 0, 0)]
-
-    #country = get_country_name()
-    #data_list.append(str(country))
+    data_dict["@ConorEF"] = [(255, 255, 255), (0, 0, 0)]
 
     hour = datetime.now().hour
     if hour <= 7:
@@ -389,7 +376,7 @@ def business_card():
     """Business card overview"""
     data_dict = {}
     data_dict["Conor Forde"] = [(255, 255, 255), (0, 0, 0)]
-    data_dict["Electronic Design Engineer"] = [(255, 255, 255), (0, 0, 0)]
+    data_dict["Product Strategist"] = [(255, 255, 255), (0, 0, 0)]
     data_dict["me@conorforde.com"] = [(255, 255, 255), (0, 0, 0)]
     data_dict["(415) 423 4026"] = [(255, 255, 255), (0, 0, 0)]
     data_dict["linkedin.com/in/conorforde"] = [(255, 255, 255), (0, 0, 0)]

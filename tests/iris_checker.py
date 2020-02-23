@@ -68,25 +68,6 @@ def find_operator_space(lint_file, error = list()):
 
     return error
 
-def fix_operator_space(lint_file, contents, error=list()):
-    """ """
-    error_list = find_operator_space(lint_file, error)
-
-    for key in reversed(sorted(error_list)):
-        stripped = contents[key]
-        print stripped
-        if "=" in contents[key]:
-            stripped = re.sub('=', ' = ', stripped)
-            contents[key] = contents[key].replace(contents[key], stripped)
-            if " =" in contents[key]:
-                stripped = re.sub(' =', ' =', stripped)
-                contents[key] = contents[key].replace(contents[key], stripped)
-            if "= " in contents[key]:
-                stripped = re.sub('= ', '= ', stripped)
-                contents[key] = contents[key].replace(contents[key], stripped)
-
-    return contents
-
 def find_dangerous_default_value(lint_file, error_dict=dict()):
     """ """
     error_type = "Dangerous default value"
