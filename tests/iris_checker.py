@@ -237,7 +237,6 @@ def apply_fixes(lint_file, modified_file):
     lint_data = read_file_to_data(lint_file)
 
     contents = fix_comma_space(lint_data, contents)
-    contents = fix_operator_space(lint_data, contents)
     contents = fix_unused_import(lint_data, contents)
     contents = fix_missing_docstring(lint_data, contents)
     print("attempting dangerous defaults")
