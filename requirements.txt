@@ -1,6 +1,4 @@
-list of dependencies
-=============
-OpenCV
-Numpy
-Python
-python-twitter
+
+opencv-python==4.2.0.32
+numpy==1.17.4
+python-twitter==3.5

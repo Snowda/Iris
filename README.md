@@ -1,4 +1,6 @@
 Iris
+
+![Build Status](https://github.com/Snowda/Iris/workflows/Build/badge.svg)
 ====
 
-Google Glass / WatchDogs / The Division -esque UI overlay onto video in OpenCV
+Augmented Reality UI demo
