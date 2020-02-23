@@ -243,8 +243,7 @@ def suffix(day):
 
 def todays_date():
     """returns today's date properly formatted"""
-    return datetime.now().strftime('%B {S}, %Y').replace('{S}',
-                                                         str(right_now.day) + suffix(right_now.day))
+    return datetime.now().strftime('%b %A, %Y')
 
 def print_over_old(print_string):
     """Prints a new line to the terminal and removes the previous line"""
