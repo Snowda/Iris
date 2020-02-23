@@ -44,14 +44,6 @@ def fix_missing_docstring(lint_file, contents, error_dict=dict()):
 
     return contents
 
-def fix_variable_names(lint_file, modified_file, error_dict=dict()):
-    """ """
-    variable.lower()
-    if variable <= 2:
-        re.sub(r'\b'+variable+'\b', 'var_'+variable, s)
-
-    return error_dict
-
 def find_operator_space(lint_file, error = list()):
     """ """
     error_type = "Operator not preceded by a space"
@@ -253,7 +245,6 @@ def apply_fixes(lint_file, modified_file):
     print("dangerous defaults complete.")
 
     #contents = fix_line_length_errors(lint_data, contents)
-    #contents = fix_variable_names(lint_data, contents)
     
     write_data_to_file(modified_file, contents)
 
