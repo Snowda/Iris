@@ -1,5 +1,5 @@
-#!/usr/bin/env python
 """Project Iris"""
+#!/usr/bin/env python
 import sys
 import re
 from datetime import datetime
